@@ -9,7 +9,6 @@
   "dependencies": {
     "@elysiajs/node": "^1.4.3",
     "@elysiajs/openapi": "^1.4.13",
-    "@elysiajs/static": "^1.4.7",
     "elysia": "^1.4.21",
     "konva": "^10.0.12",
     "skia-canvas": "^3.0.8",
