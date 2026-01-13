@@ -1,0 +1,24 @@
+{
+  "name": "node-zsb",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@elysiajs/node": "^1.4.3",
+    "@elysiajs/openapi": "^1.4.13",
+    "@elysiajs/static": "^1.4.7",
+    "elysia": "^1.4.21",
+    "konva": "^10.0.12",
+    "skia-canvas": "^3.0.8",
+    "xiv-strat-board": "^0.2.3"
+  },
+  "trustedDependencies": [
+    "skia-canvas"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.0.8"
+  }
+}
