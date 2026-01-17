@@ -20,8 +20,7 @@ export const boardController = new Elysia().get(
     const webp = await renderWebp(imageBuffer, filePath)
 
     set.headers = {
-      'Content-Type': 'image/webp',
-      'Cache-Control': 'public, max-age=31536000',
+      'content-type': 'image/webp',
     }
     return webp
   },
