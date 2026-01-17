@@ -2,41 +2,38 @@ import 'konva/skia-backend'
 import Elysia from 'elysia'
 import openapi, { fromTypes } from '@elysiajs/openapi'
 import { node } from '@elysiajs/node'
-import { createHash } from 'crypto'
-import { getCache, renderShape, renderWebp } from './src/utils/imageHelper.ts'
+import { boardController } from './src/controllers/imageController.ts'
 
 const serverInfo = {
   hostname: 'localhost',
   port: 3000,
 }
 
-const app = new Elysia({ adapter: node() })
+declare global {
+  namespace NodeJS {
+    interface Process {
+      isBun?: boolean
+    }
+  }
+}
+
+const app = new Elysia()
   .use(
     openapi({
       references: fromTypes(),
     }),
   )
-  .get('/board/:code?', async ({ params, set }) => {
-    const cacheKey = createHash('sha256')
-      .update(params.code || 'default')
-      .digest('hex')
+  .use(boardController)
 
-    const filePath = `./cache/${cacheKey}.webp`
+function initNodeServer() {
+  const server = new Elysia({ adapter: node() }).use(app).listen(serverInfo)
+}
 
-    const cached = getCache(filePath)
-    if (cached) {
-      return cached
-    }
+function initBunServer() {
+  const server = app.listen(serverInfo)
+}
 
-    const imageBuffer = await renderShape(params.code)
-    const webp = await renderWebp(imageBuffer, filePath)
-
-    set.headers = {
-      'Content-Type': 'image/webp',
-    }
-    return webp
-  })
-  .listen(serverInfo)
+process.isBun ? initBunServer() : initNodeServer()
 
 console.log(
   `Server running at http://${serverInfo.hostname}:${serverInfo.port}`,
