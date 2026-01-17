@@ -1,44 +1,43 @@
 import 'konva/skia-backend'
-import { renderBoard } from './src/standalone/renderer.ts'
-import Elysia, { file } from 'elysia'
+import Elysia from 'elysia'
 import openapi, { fromTypes } from '@elysiajs/openapi'
 import { node } from '@elysiajs/node'
-import { existsSync, writeFileSync, mkdirSync } from 'fs'
 import { createHash } from 'crypto'
+import { getCache, renderShape, renderWebp } from './src/utils/imageHelper.ts'
+
+const serverInfo = {
+  hostname: 'localhost',
+  port: 3000,
+}
 
 const app = new Elysia({ adapter: node() })
   .use(
     openapi({
       references: fromTypes(),
-    })
+    }),
   )
   .get('/board/:code?', async ({ params, set }) => {
     const cacheKey = createHash('sha256')
       .update(params.code || 'default')
       .digest('hex')
 
-    const filePath = `./cache/${cacheKey}.png`
-    if (existsSync(filePath)) {
-      return file(filePath)
+    const filePath = `./cache/${cacheKey}.webp`
+
+    const cached = getCache(filePath)
+    if (cached) {
+      return cached
     }
 
-    const stage = await renderBoard(params.code)
-    stage.draw()
-    const data = stage.toDataURL()
+    const imageBuffer = await renderShape(params.code)
+    const webp = await renderWebp(imageBuffer, filePath)
 
-    const buffer = Buffer.from(data.split(',')[1] as string, 'base64')
-    if (!existsSync('./cache')) {
-      mkdirSync('./cache')
-    }
-    writeFileSync(filePath, buffer)
     set.headers = {
-      'Content-Type': 'image/png',
+      'Content-Type': 'image/webp',
     }
-    return buffer
+    return webp
   })
-  .listen({
-    hostname: 'localhost',
-    port: 3000,
-  })
+  .listen(serverInfo)
 
-console.log(`Server running at http://localhost:${app.server?.port}`)
+console.log(
+  `Server running at http://${serverInfo.hostname}:${serverInfo.port}`,
+)
