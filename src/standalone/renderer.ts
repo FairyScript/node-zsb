@@ -1,6 +1,7 @@
 import Konva from 'konva'
 import {
   type BackgroundType,
+  type DecodeResult,
   type IconType,
   type StrategyObject,
 } from 'xiv-strat-board'
@@ -56,7 +57,9 @@ function createTextBlock(data: StrategyObject): Konva.Text {
   const offsetX = textWidth / 2
   const offsetY = fontSize / 2
 
-  FontLibrary.use('AlibabaPuHuiTi',['src/assets/fonts/AlibabaPuHuiTi-3-55-Regular.ttf'])
+  FontLibrary.use('AlibabaPuHuiTi', [
+    'src/assets/fonts/AlibabaPuHuiTi-3-55-Regular.ttf',
+  ])
 
   return new Konva.Text({
     text: data.text,
@@ -324,7 +327,7 @@ function calculateCircleOffset(arcAngle: number) {
 async function createCircleAoe(data: StrategyObject) {
   const scale = (data.size ?? 100) / 100
   const opacity = data.hidden ? 0 : (100 - (data.transparency ?? 0)) / 100
-  const arcAngle = data.type === 'fan_aoe' ? data.arcAngle ?? 90 : 360
+  const arcAngle = data.type === 'fan_aoe' ? (data.arcAngle ?? 90) : 360
   const { offsetX, offsetY } = calculateCircleOffset(arcAngle)
 
   const group = new Konva.Group({
@@ -417,8 +420,10 @@ async function createIcon(data: StrategyObject) {
   }
 }
 
-export async function renderBoard(code?: string, containerId?: string) {
-  const boardData = getCode(code)
+export async function renderBoard(
+  boardData: DecodeResult,
+  containerId?: string,
+) {
   // Initialize Stage
   const stage = new Konva.Stage({
     container: containerId,
