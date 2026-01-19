@@ -1,9 +1,11 @@
 import { file } from 'elysia'
 import { existsSync, mkdirSync } from 'fs'
-import sharp from 'sharp'
+import sharp, { type Sharp } from 'sharp'
 import { renderBoard } from '../standalone/renderer.ts'
 import { createHash } from 'crypto'
 import { getCode } from './getCode.ts'
+import type { DecodeResult } from 'xiv-strat-board'
+import { rgbaToThumbHash } from 'thumbhash'
 
 const rendererCache = new Map<string, Promise<Buffer>>()
 
@@ -15,7 +17,7 @@ export function renderImage(code = 'default') {
     return cache
   }
 
-  const renderPromise = renderStage(code, hash, filePath)
+  const renderPromise = stageLoader(code, hash, filePath)
   rendererCache.set(hash, renderPromise)
   return renderPromise
 }
@@ -34,14 +36,11 @@ export function getCache(hash: string) {
   return null
 }
 
-async function renderStage(code: string, hash: string, filePath: string) {
+async function stageLoader(code: string, hash: string, filePath: string) {
   const boardData = getCode(code)
 
   // render board image
-  const stage = await renderBoard(boardData)
-  stage.draw()
-  const data = stage.toDataURL()
-  const buffer = Buffer.from(data.split(',')[1] as string, 'base64')
+  const buffer = await renderStage(boardData)
 
   // convert to webp and save to cache
   const webp = sharp(buffer).webp({ quality: 80 })
@@ -58,6 +57,13 @@ async function renderStage(code: string, hash: string, filePath: string) {
   return webp.toBuffer()
 }
 
+async function renderStage(boardData: DecodeResult) {
+  const stage = await renderBoard(boardData)
+  stage.draw()
+  const data = stage.toDataURL()
+  return Buffer.from(data.split(',')[1] as string, 'base64')
+}
+
 export function getHashKey(code: string) {
   const hash = createHash('sha256').update(code).digest('hex')
 
@@ -67,4 +73,41 @@ export function getHashKey(code: string) {
 
 function getPath(hash: string) {
   return `./cache/${hash}.webp`
+}
+
+// 离线渲染用
+export async function renderImageOffline(code: string) {
+  const { hash, filePath } = getHashKey(code)
+  const boardData = getCode(code)
+
+  let image: Sharp
+  // 如果缓存存在,读文件
+  if (existsSync(filePath)) {
+    image = sharp(filePath)
+  } else {
+    // 否则渲染并保存
+    const buffer = await renderStage(boardData)
+    const img = sharp(buffer)
+    image = img.clone()
+
+    // 保存文件
+    // Ensure cache directory exists
+    if (!existsSync('./cache')) {
+      mkdirSync('./cache')
+    }
+    img.webp({ quality: 80 }).toFile(filePath)
+  }
+
+  //生成缩略图
+  const resizeImage = image.resize({ width: 64, height: 48, fit: 'inside' })
+  const { data, info } = await resizeImage
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  const binaryThumbHash = rgbaToThumbHash(info.width, info.height, data)
+  const thumbHashToBase64 = Buffer.from(binaryThumbHash).toString('base64')
+  return {
+    hash,
+    thumbhash: thumbHashToBase64,
+  }
 }

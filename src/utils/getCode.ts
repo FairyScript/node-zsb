@@ -11,8 +11,7 @@ export function getCode(code = defaultCode) {
     code = defaultCode
   }
   try {
-    const board = decode(code)
-    return board
+    return decode(code)
   } catch (error) {
     console.error(error)
     console.error('Failed to decode board code, using default.')
