@@ -24,7 +24,7 @@ export function renderImage(code = 'default') {
 
 export function getCache(hash: string) {
   // check static cache
-  const path = getPath(hash)
+  const path = getCachePath(hash)
   if (existsSync(path)) {
     return file(path)
   }
@@ -67,11 +67,11 @@ async function renderStage(boardData: DecodeResult) {
 export function getHashKey(code: string) {
   const hash = createHash('sha256').update(code).digest('hex')
 
-  const filePath = getPath(hash)
+  const filePath = getCachePath(hash)
   return { hash, filePath }
 }
 
-function getPath(hash: string) {
+export function getCachePath(hash: string) {
   return `./cache/${hash}.webp`
 }
 
