@@ -42,13 +42,14 @@ export const boardController = new Elysia()
     },
   )
   .get(
-    '/preview/:hash',
+    '/preview/:name',
     async ({ params }) => {
-      return file(getCachePath(params.hash))
+      const hash = params.name.replace('.webp', '')
+      return file(getCachePath(hash))
     },
     {
       params: t.Object({
-        hash: t.RegExp(/^[a-f0-9]{64}$/, { description: '图片hash' }),
+        name: t.RegExp(/^[a-f0-9]{64}(\.webp)?$/, { description: '图片名' }),
       }),
       detail: {
         description:
